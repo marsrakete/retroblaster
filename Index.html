@@ -1,1 +1,567 @@
+<!doctype html>
+<html lang="de">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+  <title>Space Invaders – Minimal, schnell, offline</title>
+  <style>
+    :root {
+      --bg: #080a0f;
+      --fg: #e6f1ff;
+      --accent: #5cff9d;
+      --danger: #ff5c7a;
+      --muted: #7a8aaa;
+    }
+    * { box-sizing: border-box; }
+    html, body {
+      margin: 0; height: 100%; background: radial-gradient(1000px 600px at 70% -10%, #101622, var(--bg));
+      color: var(--fg); font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    }
+    #wrap {
+      display: grid; place-items: center; height: 100%; padding: 12px;
+    }
+    #frame {
+      width: min(100%, 920px);
+      aspect-ratio: 4 / 3;
+      border: 1px solid #1c2433; border-radius: 12px; overflow: hidden;
+      background: #000814;
+      position: relative;
+      box-shadow: 0 12px 60px rgba(0,0,0,.45), inset 0 0 80px rgba(92,255,157,.06);
+    }
+    canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
+    #hud {
+      position: absolute; inset: 0; pointer-events: none; padding: 10px 12px; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums;
+    }
+    #left, #right { display:flex; gap:16px; align-items: center; }
+    .pill {
+      pointer-events: auto;
+      padding: 6px 10px; border: 1px solid #2a3952; border-radius: 999px; color: var(--muted); background: rgba(15,20,30,.5); backdrop-filter: blur(6px);
+      display:flex; align-items:center; gap:8px; cursor: pointer; user-select: none;
+    }
+    .pill b { color: var(--fg); }
+    #overlay {
+      position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; background: linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.75));
+      backdrop-filter: blur(2px);
+    }
+    #overlay.hidden { display: none; }
+    .title { font-size: clamp(22px, 4vw, 34px); margin: 0 0 8px; letter-spacing: 1px; }
+    .subtitle { color: var(--muted); margin: 0 0 18px; }
+    .controls { color: #b6c3d9; margin: 18px auto 0; max-width: 680px; text-align: left; line-height:1.6 }
+    .controls kbd {
+      background: #0f1522; border:1px solid #2a3952; border-bottom-color:#1e2a40; border-radius: 6px; padding: 2px 6px; font: 600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--fg);
+    }
+    .btn {
+      pointer-events: auto;
+      display:inline-flex; align-items:center; justify-content:center; gap:10px;
+      padding: 10px 16px; border-radius: 10px; border: 1px solid #2a3952; background: linear-gradient(#0b1220, #0a0f1a);
+      color: var(--fg); cursor: pointer; user-select: none;
+    }
+    .btn:hover { border-color: #39608f; }
+    .row { display:flex; gap:10px; justify-content:center; flex-wrap: wrap; }
+    #mobileControls {
+      position: absolute; left: 0; right: 0; bottom: 12px; display: none; gap: 12px; justify-content: center;
+      padding: 0 12px; pointer-events: none;
+    }
+    .touchbtn {
+      pointer-events: auto;
+      min-width: 72px; padding: 14px 16px; border-radius: 12px; border: 1px solid #2a3952; background: rgba(15,20,30,.55); color: var(--fg); font-weight: 700;
+      backdrop-filter: blur(4px);
+      touch-action: manipulation; user-select: none;
+    }
+    @media (hover:none), (max-width: 820px) {
+      #mobileControls { display: flex; }
+    }
+    a { color: var(--accent); text-decoration: none; }
+  </style>
+</head>
+<body>
+<div id="wrap">
+  <div id="frame" aria-label="Space Invaders Spielfläche">
+    <canvas id="game" width="800" height="600" role="img" aria-label="Retro Space Invaders"></canvas>
 
+    <div id="hud" aria-live="polite">
+      <div id="left">
+        <div class="pill"><span>Punkte:</span> <b id="score">0</b></div>
+        <div class="pill"><span>Leben:</span> <b id="lives">3</b></div>
+        <div class="pill"><span>Level:</span> <b id="level">1</b></div>
+      </div>
+      <div id="right">
+        <div class="pill" id="toggleAudio" title="Sound an/aus">🔊 <b>Sound</b></div>
+        <div class="pill" id="pauseBtn" title="Pause/Weiter (P)">⏸️ <b>Pause</b></div>
+        <div class="pill" id="restartBtn" title="Neustart (R)">🔁 <b>Neu</b></div>
+      </div>
+    </div>
+
+    <div id="overlay">
+      <div>
+        <h1 class="title">SPACE INVADERS</h1>
+        <p class="subtitle">Schnell, sauber, ohne Abhängigkeiten.</p>
+        <div class="row" style="margin-bottom:16px;">
+          <div class="btn" id="startBtn">▶️ Spiel starten</div>
+          <div class="btn" id="muteBtn">🔇 Ohne Sound</div>
+        </div>
+        <div class="controls">
+          <p><strong>Steuerung (Tastatur):</strong> <kbd>←</kbd> / <kbd>→</kbd> oder <kbd>A</kbd>/<kbd>D</kbd> bewegen, <kbd>Leertaste</kbd> schießen, <kbd>P</kbd> Pause, <kbd>R</kbd> Neustart.</p>
+          <p><strong>Touch:</strong> Links/Rechts-Buttons, Mitte = Feuer.</p>
+        </div>
+      </div>
+    </div>
+
+    <div id="mobileControls" aria-hidden="true">
+      <button class="touchbtn" id="leftBtn">←</button>
+      <button class="touchbtn" id="fireBtn">●</button>
+      <button class="touchbtn" id="rightBtn">→</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(() => {
+  // ----- Canvas & DPI -----
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  function fixDPI() {
+    const dpr = Math.max(1, window.devicePixelRatio || 1);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+  }
+  new ResizeObserver(fixDPI).observe(canvas);
+
+  // ----- UI refs -----
+  const overlay = document.getElementById('overlay');
+  const startBtn = document.getElementById('startBtn');
+  const muteBtn = document.getElementById('muteBtn');
+  const pauseBtn = document.getElementById('pauseBtn');
+  const restartBtn = document.getElementById('restartBtn');
+  const scoreEl = document.getElementById('score');
+  const livesEl = document.getElementById('lives');
+  const levelEl = document.getElementById('level');
+  const toggleAudioBtn = document.getElementById('toggleAudio');
+
+  // Touch buttons
+  const leftBtn = document.getElementById('leftBtn');
+  const rightBtn = document.getElementById('rightBtn');
+  const fireBtn = document.getElementById('fireBtn');
+
+  // ----- Audio (simple beeps, no assets) -----
+  const AudioCtx = window.AudioContext || window.webkitAudioContext;
+  const audio = {
+    enabled: true,
+    ctx: null,
+    beep(freq = 440, dur = 0.06, type = 'square', gain = 0.03) {
+      if (!audio.enabled) return;
+      if (!audio.ctx) audio.ctx = new AudioCtx();
+      const t0 = audio.ctx.currentTime;
+      const osc = audio.ctx.createOscillator();
+      const g = audio.ctx.createGain();
+      osc.type = type;
+      osc.frequency.value = freq;
+      g.gain.value = gain;
+      osc.connect(g).connect(audio.ctx.destination);
+      osc.start(t0);
+      osc.stop(t0 + dur);
+    }
+  };
+
+  // ----- Game state -----
+  const STATE = { MENU:0, RUN:1, PAUSE:2, GAMEOVER:3, WIN:4 };
+  let state = STATE.MENU;
+
+  const keys = { left:false, right:false, fire:false };
+  let touch = { left:false, right:false, fire:false };
+
+  const world = {
+    w: 800, h: 600,
+    player: { x: 400, y: 560, w: 36, h: 18, speed: 300, cd: 0, lives: 3 },
+    bullets: [],
+    enemyBullets: [],
+    invaders: [],
+    shields: [],
+    dir: 1,
+    stepDown: 0,
+    edgeReached: false,
+    score: 0,
+    level: 1,
+    nextShotTimer: 0
+  };
+
+  function reset(level = 1) {
+    world.w = canvas.clientWidth;
+    world.h = canvas.clientHeight;
+    world.player.x = world.w / 2;
+    world.player.y = world.h - 40;
+    world.player.cd = 0;
+    world.player.lives = Math.max(1, 3 - Math.floor((level-1)/3));
+    world.bullets.length = 0;
+    world.enemyBullets.length = 0;
+    world.score = 0;
+    world.level = level;
+    spawnInvaders(level);
+    spawnShields();
+    syncHUD();
+  }
+  function syncHUD() {
+    scoreEl.textContent = world.score|0;
+    livesEl.textContent = world.player.lives|0;
+    levelEl.textContent = world.level|0;
+  }
+
+  function spawnInvaders(level=1) {
+    world.invaders.length = 0;
+    const cols = 10, rows = 5;
+    const marginX = 40, marginY = 60;
+    const gapX = 48, gapY = 36;
+    const baseSpeed = 40 + (level-1)*8;
+
+    for (let r=0; r<rows; r++) {
+      for (let c=0; c<cols; c++) {
+        world.invaders.push({
+          x: marginX + c*gapX,
+          y: marginY + r*gapY,
+          w: 28, h: 20,
+          alive: true,
+          value: (rows - r) * 10,
+        });
+      }
+    }
+    world.dir = 1;
+    world.stepDown = 0;
+    world.edgeReached = false;
+    world.invaderSpeed = baseSpeed;
+  }
+
+  function spawnShields() {
+    world.shields.length = 0;
+    const shieldCount = 3;
+    const shieldW = 70, shieldH = 34, blocksX = 7, blocksY = 3;
+    const gap = (world.w - shieldCount*shieldW) / (shieldCount+1);
+    for (let s=0; s<shieldCount; s++) {
+      const sx = gap + s*(shieldW+gap);
+      const sy = world.h - 140;
+      for (let y=0; y<blocksY; y++) for (let x=0; x<blocksX; x++) {
+        world.shields.push({
+          x: sx + x*(shieldW/blocksX),
+          y: sy + y*(shieldH/blocksY),
+          w: (shieldW/blocksX)-2, h: (shieldH/blocksY)-2, hp: 2
+        });
+      }
+    }
+  }
+
+  // ----- Rendering (pixel sprites) -----
+  function drawPlayer(p) {
+    ctx.save();
+    ctx.translate(p.x, p.y);
+    ctx.fillStyle = "#5cff9d";
+    // simple retro ship
+    ctx.fillRect(-18, -6, 36, 12);
+    ctx.fillRect(-10, -10, 20, 4);
+    ctx.fillRect(-4, -14, 8, 4);
+    ctx.restore();
+  }
+  function drawInvader(x,y,aliveFactor=1) {
+    ctx.save();
+    ctx.translate(x,y);
+    ctx.fillStyle = aliveFactor > 0 ? "#9cc7ff" : "#284a7a";
+    // iconic crab-ish
+    ctx.fillRect(-10,-8,20,4);
+    ctx.fillRect(-12,-4,24,4);
+    ctx.fillRect(-14,0,28,4);
+    ctx.fillRect(-18,4,36,4);
+    ctx.fillRect(-12,8,6,4);
+    ctx.fillRect(6,8,6,4);
+    // eyes
+    ctx.clearRect(-6,-2,4,2);
+    ctx.clearRect(2,-2,4,2);
+    ctx.restore();
+  }
+  function drawShield(b) {
+    ctx.fillStyle = b.hp === 2 ? "#6dd58f" : "#387a58";
+    ctx.fillRect(b.x, b.y, b.w, b.h);
+  }
+  function starsBackground(t) {
+    ctx.save();
+    ctx.globalAlpha = 0.8;
+    ctx.fillStyle = "#000a16";
+    ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
+    ctx.globalAlpha = 0.8;
+    const rand = mulberry32(12345);
+    for (let i=0;i<180;i++){
+      const x = (rand()*canvas.clientWidth)|0;
+      const y = ((rand()*canvas.clientHeight) + (t*20)%canvas.clientHeight)|0;
+      ctx.fillStyle = i%13===0?"#203a73": i%7===0?"#1b2947":"#0f1b33";
+      ctx.fillRect(x, y%canvas.clientHeight, 2, 2);
+    }
+    ctx.restore();
+  }
+  function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
+
+  // ----- Collision -----
+  function rectHit(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
+
+  // ----- Input -----
+  addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase()==='a') keys.left = true;
+    if (e.key === 'ArrowRight' || e.key.toLowerCase()==='d') keys.right = true;
+    if (e.code === 'Space') { keys.fire = true; e.preventDefault(); }
+    if (e.key.toLowerCase() === 'p') togglePause();
+    if (e.key.toLowerCase() === 'r') restart();
+  });
+  addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase()==='a') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key.toLowerCase()==='d') keys.right = false;
+    if (e.code === 'Space') keys.fire = false;
+  });
+
+  function bindTouch(btn, prop){
+    let id = null;
+    const on = (ev)=>{ ev.preventDefault(); id = (ev.changedTouches?ev.changedTouches[0].identifier:null); touch[prop] = true; };
+    const off = (ev)=>{ ev.preventDefault(); touch[prop] = false; id = null; };
+    btn.addEventListener('pointerdown', on);
+    btn.addEventListener('pointerup', off);
+    btn.addEventListener('pointerleave', off);
+    btn.addEventListener('pointercancel', off);
+  }
+  bindTouch(leftBtn, 'left');
+  bindTouch(rightBtn, 'right');
+  bindTouch(fireBtn, 'fire');
+
+  // ----- Game mechanics -----
+  let last = 0;
+  function loop(ts) {
+    const t = ts/1000;
+    const dt = Math.min(0.033, (ts - last) / 1000 || 0);
+    last = ts;
+    if (state === STATE.RUN) update(dt);
+    render(t);
+    requestAnimationFrame(loop);
+  }
+
+  function update(dt) {
+    // Move player
+    const p = world.player;
+    const move = (keys.left||touch.left? -1 : 0) + (keys.right||touch.right? 1 : 0);
+    p.x += move * p.speed * dt;
+    const margin = 18;
+    p.x = Math.max(margin, Math.min(world.w - margin, p.x));
+
+    // Shooting
+    p.cd -= dt;
+    if ((keys.fire||touch.fire) && p.cd <= 0) {
+      world.bullets.push({ x: p.x-2, y: p.y-14, w: 4, h: 10, vy: -520 });
+      p.cd = 0.22;
+      audio.beep(880, 0.05, 'square', 0.035);
+    }
+
+    // Update bullets
+    for (const b of world.bullets) b.y += b.vy * dt;
+    world.bullets = world.bullets.filter(b => b.y + b.h > 0);
+
+    // Invader movement
+    const invAlive = world.invaders.filter(i=>i.alive);
+    if (invAlive.length === 0) {
+      // Next level
+      world.level++;
+      syncHUD();
+      spawnInvaders(world.level);
+      audio.beep(650, 0.12, 'square', 0.05);
+      audio.beep(900, 0.12, 'square', 0.05);
+      return;
+    }
+    const speedBoost = Math.min(160, (60 - invAlive.length) * 2.4);
+    const v = world.invaderSpeed + speedBoost;
+
+    let minX = Infinity, maxX = -Infinity;
+    for (const inv of invAlive) {
+      inv.x += world.dir * v * dt * 0.6;
+      minX = Math.min(minX, inv.x - inv.w/2);
+      maxX = Math.max(maxX, inv.x + inv.w/2);
+    }
+    if (minX < 12 || maxX > world.w - 12) world.edgeReached = true;
+    if (world.edgeReached) {
+      world.edgeReached = false;
+      world.dir *= -1;
+      for (const inv of invAlive) inv.y += 20; // step down
+    }
+
+    // Alien shooting
+    world.nextShotTimer -= dt;
+    if (world.nextShotTimer <= 0) {
+      const shooters = bottomRow(invAlive);
+      if (shooters.length) {
+        const s = shooters[(Math.random()*shooters.length)|0];
+        world.enemyBullets.push({ x: s.x-2, y: s.y+10, w: 4, h: 10, vy: 200 + Math.random()*120 });
+        audio.beep(180, 0.06, 'square', 0.03);
+      }
+      world.nextShotTimer = 0.5 + Math.random()*0.9;
+    }
+    for (const eb of world.enemyBullets) eb.y += eb.vy * dt;
+    world.enemyBullets = world.enemyBullets.filter(b => b.y < world.h + 20);
+
+    // Collisions: player bullets vs invaders
+    for (const b of world.bullets) {
+      for (const inv of invAlive) {
+        if (inv.alive && rectHit({x:b.x,y:b.y,w:b.w,h:b.h},{x:inv.x-inv.w/2,y:inv.y-inv.h/2,w:inv.w,h:inv.h})) {
+          inv.alive = false;
+          b.y = -9999;
+          world.score += inv.value;
+          syncHUD();
+          audio.beep(520, 0.06, 'square', 0.04);
+          audio.beep(420, 0.05, 'square', 0.03);
+          break;
+        }
+      }
+    }
+
+    // Bullets vs shields
+    for (const s of world.shields) {
+      if (s.hp <= 0) continue;
+      for (const b of world.bullets) {
+        if (rectHit({x:b.x,y:b.y,w:b.w,h:b.h}, s)) { s.hp--; b.y = -9999; audio.beep(300, 0.03, 'square', 0.02); }
+      }
+      for (const eb of world.enemyBullets) {
+        if (rectHit({x:eb.x,y:eb.y,w:eb.w,h:eb.h}, s)) { s.hp--; eb.y = world.h+999; audio.beep(260, 0.03, 'square', 0.02); }
+      }
+    }
+
+    // Enemy bullets vs player
+    for (const eb of world.enemyBullets) {
+      if (rectHit({x:eb.x,y:eb.y,w:eb.w,h:eb.h},{x:p.x-18,y:p.y-9,w:36,h:18})) {
+        eb.y = world.h + 999;
+        hitPlayer();
+        break;
+      }
+    }
+
+    // Invaders reach bottom or hit shields/player
+    for (const inv of invAlive) {
+      const invRect = {x:inv.x-inv.w/2,y:inv.y-inv.h/2,w:inv.w,h:inv.h};
+      if (invRect.y + invRect.h >= p.y - 4) { // reached player row
+        world.player.lives = 0;
+        gameOver();
+        return;
+      }
+      // Invaders eat shields
+      for (const s of world.shields) {
+        if (s.hp>0 && rectHit(invRect, s)) s.hp = 0;
+      }
+    }
+  }
+
+  function hitPlayer() {
+    world.player.lives--;
+    syncHUD();
+    audio.beep(120, 0.12, 'square', 0.06);
+    if (world.player.lives <= 0) {
+      gameOver();
+    } else {
+      // brief invulnerability blink – handled visually in render
+    }
+  }
+
+  function gameOver() {
+    state = STATE.GAMEOVER;
+    showOverlay(`<h1 class="title">Game Over</h1>
+      <p class="subtitle">Punkte: <b>${world.score|0}</b> · Level: <b>${world.level|0}</b></p>
+      <div class="row"><div class="btn" onclick="location.reload()">🔁 Neu starten</div></div>
+      <div class="controls"><p>Tipp: Schieße durch kleine Lücken in den Schilden, um sicher zu bleiben.</p></div>`);
+  }
+
+  function bottomRow(invaders) {
+    const byCol = new Map();
+    for (const inv of invaders) {
+      const col = Math.round((inv.x / 48)|0);
+      const prev = byCol.get(col);
+      if (!prev || inv.y > prev.y) byCol.set(col, inv);
+    }
+    return Array.from(byCol.values());
+  }
+
+  // ----- Render -----
+  let blinkT = 0;
+  function render(t) {
+    fixDPI();
+    starsBackground(t);
+
+    // Shields
+    for (const s of world.shields) if (s.hp>0) drawShield(s);
+
+    // Invaders
+    for (const inv of world.invaders) if (inv.alive) drawInvader(inv.x, inv.y, 1);
+
+    // Bullets
+    ctx.fillStyle = "#ffec6e";
+    for (const b of world.bullets) ctx.fillRect(b.x, b.y, b.w, b.h);
+    ctx.fillStyle = "#ff6e9a";
+    for (const b of world.enemyBullets) ctx.fillRect(b.x, b.y, b.w, b.h);
+
+    // Player (blink when just hit)
+    blinkT += 0.016;
+    const blink = (state!==STATE.RUN) ? false : (world.player.lives>=0 && (Math.sin(blinkT*20)>0.6));
+    if (!blink) drawPlayer(world.player);
+
+    // State overlays (small)
+    if (state === STATE.PAUSE) {
+      banner("PAUSE – Drücke P zum Fortsetzen");
+    } else if (state === STATE.WIN) {
+      banner("SIEG!");
+    }
+  }
+  function banner(text) {
+    ctx.save();
+    ctx.globalAlpha = .9;
+    ctx.fillStyle = "rgba(0,0,0,.5)";
+    const w = ctx.measureText ? Math.max(280, ctx.measureText(text).width + 40) : 360;
+    ctx.fillRect((canvas.clientWidth-w)/2, canvas.clientHeight/2-26, w, 48);
+    ctx.globalAlpha = 1;
+    ctx.fillStyle = "#e6f1ff";
+    ctx.font = "700 20px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(text, canvas.clientWidth/2, canvas.clientHeight/2+8);
+    ctx.restore();
+  }
+
+  // ----- Overlay & control helpers -----
+  function showOverlay(html) {
+    overlay.innerHTML = `<div>${html}</div>`;
+    overlay.classList.remove('hidden');
+  }
+  function hideOverlay() { overlay.classList.add('hidden'); }
+
+  function start(withSound=true) {
+    audio.enabled = withSound;
+    if (withSound && !audio.ctx) try { audio.ctx = new AudioCtx(); } catch {}
+    reset(1);
+    state = STATE.RUN;
+    hideOverlay();
+  }
+  function togglePause() {
+    if (state === STATE.RUN) { state = STATE.PAUSE; }
+    else if (state === STATE.PAUSE) { state = STATE.RUN; }
+  }
+  function restart() { location.reload(); }
+
+  // Buttons
+  startBtn.addEventListener('click', ()=> start(true));
+  muteBtn.addEventListener('click', ()=> start(false));
+  pauseBtn.addEventListener('click', ()=> togglePause());
+  restartBtn.addEventListener('click', ()=> restart());
+  toggleAudioBtn.addEventListener('click', ()=> {
+    audio.enabled = !audio.enabled;
+    if (audio.enabled && !audio.ctx) audio.ctx = new AudioCtx();
+    toggleAudioBtn.firstChild.nodeValue = audio.enabled ? "🔊" : "🔇";
+    toggleAudioBtn.querySelector('b').textContent = audio.enabled ? "Sound" : "Stumm";
+  });
+
+  // Start loop
+  requestAnimationFrame(loop);
+
+  // Expose for overlay restart button
+  window.locationReload = restart;
+})();
+</script>
+</body>
+</html>
