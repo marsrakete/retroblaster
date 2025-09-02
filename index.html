@@ -3,121 +3,90 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-  <title>Retro Blaster – Minimal, schnell, offline</title>
+  <title>Retro Blaster</title>
   <style>
-    :root {
-      --bg: #080a0f;
-      --fg: #e6f1ff;
-      --accent: #5cff9d;
-      --danger: #ff5c7a;
-      --muted: #7a8aaa;
+    body {
+      margin: 0; background: #080a0f; color: #e6f1ff;
+      font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+      display: flex; flex-direction: column; align-items: center;
     }
-    * { box-sizing: border-box; }
-    html, body {
-      margin: 0; height: 100%; background: radial-gradient(1000px 600px at 70% -10%, #101622, var(--bg));
-      color: var(--fg); font: 16px/1.4 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+    #menu {
+      width: 100%; max-width: 920px;
+      background: linear-gradient(#0b1220, #0a0f1a);
+      border-bottom: 1px solid #2a3952;
+      padding: 12px; text-align: center;
     }
-    #wrap {
-      display: grid; place-items: center; height: 100%; padding: 12px;
+    #menu h1 { margin: 0 0 6px; font-size: 28px; letter-spacing: 1px; }
+    #menu .subtitle { margin: 0 0 12px; color: #7a8aaa; }
+    .btn {
+      display: inline-block; margin: 4px; padding: 8px 14px;
+      border: 1px solid #2a3952; border-radius: 8px;
+      background: #101622; color: #e6f1ff; cursor: pointer;
     }
+    .btn:hover { border-color: #39608f; }
     #frame {
-      width: min(100%, 920px);
-      aspect-ratio: 4 / 3;
-      border: 1px solid #1c2433; border-radius: 12px; overflow: hidden;
-      background: #000814;
-      position: relative;
-      box-shadow: 0 12px 60px rgba(0,0,0,.45), inset 0 0 80px rgba(92,255,157,.06);
+      width: min(100%, 920px); aspect-ratio: 4 / 3;
+      background: #000814; border: 1px solid #1c2433; border-radius: 12px;
+      position: relative; overflow: hidden; margin-top: 8px;
     }
     canvas { width: 100%; height: 100%; display: block; image-rendering: pixelated; }
     #hud {
-      position: absolute; inset: 0; pointer-events: none; padding: 10px 12px; display: flex; justify-content: space-between; font-variant-numeric: tabular-nums;
+      position: absolute; inset: 0; pointer-events: none; padding: 10px 12px;
+      display: flex; justify-content: space-between; gap: 8px; font-variant-numeric: tabular-nums;
     }
-    #left, #right { display:flex; gap:16px; align-items: center; }
     .pill {
       pointer-events: auto;
-      padding: 6px 10px; border: 1px solid #2a3952; border-radius: 999px; color: var(--muted); background: rgba(15,20,30,.5); backdrop-filter: blur(6px);
-      display:flex; align-items:center; gap:8px; cursor: pointer; user-select: none;
+      padding: 6px 10px; border: 1px solid #2a3952; border-radius: 999px;
+      background: rgba(15,20,30,.5); color: #7a8aaa; display:inline-flex; align-items:center; gap:8px;
     }
-    .pill b { color: var(--fg); }
-    #overlay {
-      position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 24px; background: linear-gradient(to bottom, rgba(0,0,0,.45), rgba(0,0,0,.75));
-      backdrop-filter: blur(2px);
-    }
-    #overlay.hidden { display: none; }
-    .title { font-size: clamp(22px, 4vw, 34px); margin: 0 0 8px; letter-spacing: 1px; }
-    .subtitle { color: var(--muted); margin: 0 0 18px; }
-    .controls { color: #b6c3d9; margin: 18px auto 0; max-width: 680px; text-align: left; line-height:1.6 }
-    .controls kbd {
-      background: #0f1522; border:1px solid #2a3952; border-bottom-color:#1e2a40; border-radius: 6px; padding: 2px 6px; font: 600 12px/1.4 ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--fg);
-    }
-    .btn {
-      pointer-events: auto;
-      display:inline-flex; align-items:center; justify-content:center; gap:10px;
-      padding: 10px 16px; border-radius: 10px; border: 1px solid #2a3952; background: linear-gradient(#0b1220, #0a0f1a);
-      color: var(--fg); cursor: pointer; user-select: none;
-    }
-    .btn:hover { border-color: #39608f; }
-    .row { display:flex; gap:10px; justify-content:center; flex-wrap: wrap; }
+    .pill b { color: #e6f1ff; }
     #mobileControls {
-      position: absolute; left: 0; right: 0; bottom: 12px; display: none; gap: 12px; justify-content: center;
-      padding: 0 12px; pointer-events: none;
+      position: absolute; left: 0; right: 0; bottom: 12px; display: none;
+      gap: 12px; justify-content: center; pointer-events: none;
     }
     .touchbtn {
-      pointer-events: auto;
-      min-width: 72px; padding: 14px 16px; border-radius: 12px; border: 1px solid #2a3952; background: rgba(15,20,30,.55); color: var(--fg); font-weight: 700;
-      backdrop-filter: blur(4px);
-      touch-action: manipulation; user-select: none;
+      pointer-events: auto; min-width: 72px;
+      padding: 14px 16px; border-radius: 12px; border: 1px solid #2a3952;
+      background: rgba(15,20,30,.55); color: #e6f1ff; font-weight: 700;
     }
     @media (hover:none), (max-width: 820px) {
       #mobileControls { display: flex; }
     }
-    a { color: var(--accent); text-decoration: none; }
+    small.note { color: #9aa9c6; display:block; margin-top:8px; }
   </style>
 </head>
 <body>
-<div id="wrap">
-  <div id="frame" aria-label="Retro Blaster Spielfläche">
-    <canvas id="game" width="800" height="600" role="img" aria-label="Retro Blaster"></canvas>
-
-    <div id="hud" aria-live="polite">
-      <div id="left">
-        <div class="pill"><span>Punkte:</span> <b id="score">0</b></div>
-        <div class="pill"><span>Leben:</span> <b id="lives">3</b></div>
-        <div class="pill"><span>Level:</span> <b id="level">1</b></div>
-      </div>
-      <div id="right">
-        <div class="pill" id="toggleAudio" title="Sound an/aus">🔊 <b>Sound</b></div>
-        <div class="pill" id="pauseBtn" title="Pause/Weiter (P)">⏸️ <b>Pause</b></div>
-        <div class="pill" id="restartBtn" title="Neustart (R)">🔁 <b>Neu</b></div>
-      </div>
+  <div id="menu">
+    <h1>RETRO BLASTER</h1>
+    <p class="subtitle">Ein minimalistisches Arcade-Spiel — kein Schnickschnack.</p>
+    <div>
+      <button class="btn" id="startBtn">▶️ Spiel starten</button>
+      <button class="btn" id="muteBtn">🔇 Ohne Sound</button>
+      <button class="btn" id="restartBtn">🔁 Neustart</button>
     </div>
+    <p style="color:#b6c3d9;font-size:14px;margin-top:10px;">
+      Steuerung: ← / → oder A/D bewegen, Leertaste = Feuer, P = Pause, R = Neustart
+    </p>
+    <small class="note">Hinweis: "Ohne Sound" startet stumm; mit "Spiel starten" wird Sound aktiviert (wenn der Browser Audio erlaubt).</small>
+  </div>
 
-    <div id="overlay">
-      <div>
-        <h1 class="title">Retro Blaster</h1>
-        <p class="subtitle">Schnell, sauber, ohne Abhängigkeiten.</p>
-        <div class="row" style="margin-bottom:16px;">
-          <div class="btn" id="startBtn">▶️ Spiel starten</div>
-          <div class="btn" id="muteBtn">🔇 Ohne Sound</div>
-        </div>
-        <div class="controls">
-          <p><strong>Steuerung (Tastatur):</strong> <kbd>←</kbd> / <kbd>→</kbd> oder <kbd>A</kbd>/<kbd>D</kbd> bewegen, <kbd>Leertaste</kbd> schießen, <kbd>P</kbd> Pause, <kbd>R</kbd> Neustart.</p>
-          <p><strong>Touch:</strong> Links/Rechts-Buttons, Mitte = Feuer.</p>
-        </div>
-      </div>
+  <div id="frame">
+    <canvas id="game" width="800" height="600" aria-label="Retro Blaster Spiel"></canvas>
+    <div id="hud" aria-hidden="true">
+      <div class="pill">Punkte: <b id="score">0</b></div>
+      <div class="pill">Leben: <b id="lives">3</b></div>
+      <div class="pill">Level: <b id="level">1</b></div>
     </div>
-
     <div id="mobileControls" aria-hidden="true">
       <button class="touchbtn" id="leftBtn">←</button>
       <button class="touchbtn" id="fireBtn">●</button>
       <button class="touchbtn" id="rightBtn">→</button>
     </div>
   </div>
-</div>
 
 <script>
 (() => {
-  // ----- Canvas & DPI -----
+  // Canvas & DPI
   const canvas = document.getElementById('game');
   const ctx = canvas.getContext('2d');
   function fixDPI() {
@@ -125,233 +94,258 @@
     const rect = canvas.getBoundingClientRect();
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0); // draw in CSS pixels
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   }
   new ResizeObserver(fixDPI).observe(canvas);
+  fixDPI();
 
-  // ----- UI refs -----
-  const overlay = document.getElementById('overlay');
-  const startBtn = document.getElementById('startBtn');
-  const muteBtn = document.getElementById('muteBtn');
-  const pauseBtn = document.getElementById('pauseBtn');
-  const restartBtn = document.getElementById('restartBtn');
+  // UI refs
   const scoreEl = document.getElementById('score');
   const livesEl = document.getElementById('lives');
   const levelEl = document.getElementById('level');
-  const toggleAudioBtn = document.getElementById('toggleAudio');
-
-  // Touch buttons
+  const startBtn = document.getElementById('startBtn');
+  const muteBtn = document.getElementById('muteBtn');
+  const restartBtn = document.getElementById('restartBtn');
   const leftBtn = document.getElementById('leftBtn');
   const rightBtn = document.getElementById('rightBtn');
   const fireBtn = document.getElementById('fireBtn');
 
-  // ----- Audio (simple beeps, no assets) -----
+  // Audio (simple beeps)
   const AudioCtx = window.AudioContext || window.webkitAudioContext;
   const audio = {
     enabled: true,
     ctx: null,
     beep(freq = 440, dur = 0.06, type = 'square', gain = 0.03) {
       if (!audio.enabled) return;
-      if (!audio.ctx) audio.ctx = new AudioCtx();
-      const t0 = audio.ctx.currentTime;
-      const osc = audio.ctx.createOscillator();
-      const g = audio.ctx.createGain();
-      osc.type = type;
-      osc.frequency.value = freq;
-      g.gain.value = gain;
-      osc.connect(g).connect(audio.ctx.destination);
-      osc.start(t0);
-      osc.stop(t0 + dur);
+      try {
+        if (!audio.ctx) audio.ctx = new AudioCtx();
+        const t0 = audio.ctx.currentTime;
+        const osc = audio.ctx.createOscillator();
+        const g = audio.ctx.createGain();
+        osc.type = type;
+        osc.frequency.value = freq;
+        g.gain.value = gain;
+        osc.connect(g).connect(audio.ctx.destination);
+        osc.start(t0);
+        osc.stop(t0 + dur);
+      } catch (e) {
+        // Einige Browser blockieren Audio ohne Nutzerinteraktion — still fail silently
+      }
     }
   };
 
-  // ----- Game state -----
-  const STATE = { MENU:0, RUN:1, PAUSE:2, GAMEOVER:3, WIN:4 };
+  // State
+  const STATE = { MENU: 0, RUN: 1, PAUSE: 2, GAMEOVER: 3 };
   let state = STATE.MENU;
 
-  const keys = { left:false, right:false, fire:false };
-  let touch = { left:false, right:false, fire:false };
+  // Input
+  const keys = { left: false, right: false, fire: false };
+  let touch = { left: false, right: false, fire: false };
 
+  // World
   const world = {
     w: 800, h: 600,
     player: { x: 400, y: 560, w: 36, h: 18, speed: 300, cd: 0, lives: 3 },
-    bullets: [],
-    enemyBullets: [],
-    invaders: [],
-    shields: [],
-    dir: 1,
-    stepDown: 0,
-    edgeReached: false,
-    score: 0,
-    level: 1,
-    nextShotTimer: 0
+    bullets: [], enemyBullets: [], invaders: [], shields: [],
+    dir: 1, invaderSpeed: 40, score: 0, level: 1, nextShotTimer: 0,
+    layout: { cols: 10, rows: 5, gapX: 48, gapY: 36, marginX: 40, marginY: 60 }
   };
 
-  function reset(level = 1) {
+  // Helpers
+  function syncHUD() {
+    scoreEl.textContent = world.score | 0;
+    livesEl.textContent = world.player.lives | 0;
+    levelEl.textContent = world.level | 0;
+  }
+  function rectHit(a, b) {
+    return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+  }
+
+  // Spawner
+  function spawnInvaders(level = 1) {
+    world.invaders.length = 0;
+    const { cols, rows, gapX, gapY, marginX, marginY } = world.layout;
+    const baseSpeed = 25 + (level - 1) * 8;
+    for (let r = 0; r < rows; r++) {
+      for (let c = 0; c < cols; c++) {
+        world.invaders.push({
+          x: marginX + c * gapX,
+          y: marginY + r * gapY,
+          w: 28, h: 20,
+          alive: true,
+          value: (rows - r) * 10,
+          col: c, row: r
+        });
+      }
+    }
+    world.invaderSpeed = baseSpeed;
+    world.dir = 1;
+  }
+
+  function spawnShields() {
+    world.shields.length = 0;
+    const shieldCount = 3, shieldW = 70, shieldH = 34, blocksX = 7, blocksY = 3;
+    const gap = (world.w - shieldCount * shieldW) / (shieldCount + 1);
+    for (let s = 0; s < shieldCount; s++) {
+      const sx = gap + s * (shieldW + gap);
+      const sy = world.h - 140;
+      for (let y = 0; y < blocksY; y++) for (let x = 0; x < blocksX; x++) {
+        world.shields.push({
+          x: sx + x * (shieldW / blocksX),
+          y: sy + y * (shieldH / blocksY),
+          w: (shieldW / blocksX) - 2,
+          h: (shieldH / blocksY) - 2,
+          hp: 2
+        });
+      }
+    }
+  }
+
+  // Input handling
+  addEventListener('keydown', e => {
+    if (e.repeat) return;
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = true;
+    if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = true;
+    if (e.code === 'Space') { keys.fire = true; e.preventDefault(); }
+    if (e.key.toLowerCase() === 'p') togglePause();
+    if (e.key.toLowerCase() === 'r') restart();
+  });
+  addEventListener('keyup', e => {
+    if (e.key === 'ArrowLeft' || e.key.toLowerCase() === 'a') keys.left = false;
+    if (e.key === 'ArrowRight' || e.key.toLowerCase() === 'd') keys.right = false;
+    if (e.code === 'Space') keys.fire = false;
+  });
+  function bindTouch(btn, prop) {
+    btn.addEventListener('pointerdown', ev => { ev.preventDefault(); touch[prop] = true; });
+    btn.addEventListener('pointerup', ev => { ev.preventDefault(); touch[prop] = false; });
+    btn.addEventListener('pointercancel', () => touch[prop] = false);
+    btn.addEventListener('pointerleave', () => touch[prop] = false);
+  }
+  bindTouch(leftBtn, 'left'); bindTouch(rightBtn, 'right'); bindTouch(fireBtn, 'fire');
+
+  // Game logic
+  function reset(level = 1, keepScore = false) {
     world.w = canvas.clientWidth;
     world.h = canvas.clientHeight;
     world.player.x = world.w / 2;
     world.player.y = world.h - 40;
     world.player.cd = 0;
-    world.player.lives = Math.max(1, 3 - Math.floor((level-1)/3));
+    world.player.lives = 3;
     world.bullets.length = 0;
     world.enemyBullets.length = 0;
-    world.score = 0;
     world.level = level;
+    if (!keepScore) world.score = 0;
     spawnInvaders(level);
     spawnShields();
     syncHUD();
   }
-  function syncHUD() {
-    scoreEl.textContent = world.score|0;
-    livesEl.textContent = world.player.lives|0;
-    levelEl.textContent = world.level|0;
-  }
 
-  function spawnInvaders(level=1) {
-    world.invaders.length = 0;
-    const cols = 10, rows = 5;
-    const marginX = 40, marginY = 60;
-    const gapX = 48, gapY = 36;
-    const baseSpeed = 40 + (level-1)*8;
-
-    for (let r=0; r<rows; r++) {
-      for (let c=0; c<cols; c++) {
-        world.invaders.push({
-          x: marginX + c*gapX,
-          y: marginY + r*gapY,
-          w: 28, h: 20,
-          alive: true,
-          value: (rows - r) * 10,
-        });
-      }
+  function bottomRow(invAlive) {
+    // Return one invader-per-column at the lowest row (candidates to shoot)
+    const byCol = new Map();
+    for (const inv of invAlive) {
+      const col = inv.col;
+      const prev = byCol.get(col);
+      if (!prev || inv.y > prev.y) byCol.set(col, inv);
     }
-    world.dir = 1;
-    world.stepDown = 0;
-    world.edgeReached = false;
-    world.invaderSpeed = baseSpeed;
+    return Array.from(byCol.values());
   }
 
-  function spawnShields() {
-    world.shields.length = 0;
-    const shieldCount = 3;
-    const shieldW = 70, shieldH = 34, blocksX = 7, blocksY = 3;
-    const gap = (world.w - shieldCount*shieldW) / (shieldCount+1);
-    for (let s=0; s<shieldCount; s++) {
-      const sx = gap + s*(shieldW+gap);
-      const sy = world.h - 140;
-      for (let y=0; y<blocksY; y++) for (let x=0; x<blocksX; x++) {
-        world.shields.push({
-          x: sx + x*(shieldW/blocksX),
-          y: sy + y*(shieldH/blocksY),
-          w: (shieldW/blocksX)-2, h: (shieldH/blocksY)-2, hp: 2
-        });
-      }
+  function hitPlayer() {
+    world.player.lives--;
+    syncHUD();
+    audio.beep(120, 0.12, 'square', 0.06);
+    if (world.player.lives <= 0) {
+      gameOver();
     }
   }
 
-  // ----- Rendering (pixel sprites) -----
-  function drawPlayer(p) {
+  function gameOver() {
+    state = STATE.GAMEOVER;
+  }
+
+  function togglePause() {
+    if (state === STATE.RUN) state = STATE.PAUSE;
+    else if (state === STATE.PAUSE) state = STATE.RUN;
+  }
+
+  function restart() {
+    reset(1, false);
+    state = STATE.RUN;
+  }
+
+  // Rendering helpers
+  function drawPlayer(p, blink = false) {
+    if (blink) return; // simple blink skip
     ctx.save();
     ctx.translate(p.x, p.y);
     ctx.fillStyle = "#5cff9d";
-    // simple retro ship
     ctx.fillRect(-18, -6, 36, 12);
     ctx.fillRect(-10, -10, 20, 4);
     ctx.fillRect(-4, -14, 8, 4);
     ctx.restore();
   }
-  function drawInvader(x,y,aliveFactor=1) {
+  function drawInvader(x, y) {
     ctx.save();
-    ctx.translate(x,y);
-    ctx.fillStyle = aliveFactor > 0 ? "#9cc7ff" : "#284a7a";
-    // iconic crab-ish
-    ctx.fillRect(-10,-8,20,4);
-    ctx.fillRect(-12,-4,24,4);
-    ctx.fillRect(-14,0,28,4);
-    ctx.fillRect(-18,4,36,4);
-    ctx.fillRect(-12,8,6,4);
-    ctx.fillRect(6,8,6,4);
-    // eyes
-    ctx.clearRect(-6,-2,4,2);
-    ctx.clearRect(2,-2,4,2);
+    ctx.translate(x, y);
+    ctx.fillStyle = "#9cc7ff";
+    ctx.fillRect(-10, -8, 20, 4);
+    ctx.fillRect(-12, -4, 24, 4);
+    ctx.fillRect(-14, 0, 28, 4);
+    ctx.fillRect(-18, 4, 36, 4);
+    ctx.fillRect(-12, 8, 6, 4);
+    ctx.fillRect(6, 8, 6, 4);
+    ctx.clearRect(-6, -2, 4, 2);
+    ctx.clearRect(2, -2, 4, 2);
     ctx.restore();
   }
   function drawShield(b) {
     ctx.fillStyle = b.hp === 2 ? "#6dd58f" : "#387a58";
     ctx.fillRect(b.x, b.y, b.w, b.h);
   }
+
+  function banner(text) {
+    ctx.save();
+    ctx.globalAlpha = 0.95;
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    const w = Math.max(260, ctx.measureText(text).width + 40);
+    const x = (canvas.clientWidth - w) / 2;
+    const y = canvas.clientHeight / 2 - 26;
+    ctx.fillRect(x, y, w, 52);
+    ctx.fillStyle = "#e6f1ff";
+    ctx.font = "700 18px system-ui, sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText(text, canvas.clientWidth / 2, canvas.clientHeight / 2 + 8);
+    ctx.restore();
+  }
+
   function starsBackground(t) {
     ctx.save();
-    ctx.globalAlpha = 0.8;
     ctx.fillStyle = "#000a16";
-    ctx.fillRect(0,0,canvas.clientWidth,canvas.clientHeight);
-    ctx.globalAlpha = 0.8;
-    const rand = mulberry32(12345);
-    for (let i=0;i<180;i++){
-      const x = (rand()*canvas.clientWidth)|0;
-      const y = ((rand()*canvas.clientHeight) + (t*20)%canvas.clientHeight)|0;
-      ctx.fillStyle = i%13===0?"#203a73": i%7===0?"#1b2947":"#0f1b33";
-      ctx.fillRect(x, y%canvas.clientHeight, 2, 2);
+    ctx.fillRect(0, 0, canvas.clientWidth, canvas.clientHeight);
+    const cnt = 120;
+    for (let i = 0; i < cnt; i++) {
+      const x = (i * 97 + (t * 12)) % canvas.clientWidth;
+      const y = (i * 61 + (t * 23)) % canvas.clientHeight;
+      if (i % 11 === 0) ctx.fillStyle = "#203a73"; else if (i % 7 === 0) ctx.fillStyle = "#1b2947"; else ctx.fillStyle = "#0f1b33";
+      ctx.fillRect(x, y, 2, 2);
     }
     ctx.restore();
   }
-  function mulberry32(a){return function(){var t=a+=0x6D2B79F5;t=Math.imul(t^t>>>15,t|1);t^=t+Math.imul(t^t>>>7,t|61);return((t^t>>>14)>>>0)/4294967296}}
 
-  // ----- Collision -----
-  function rectHit(a,b){ return a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y; }
-
-  // ----- Input -----
-  addEventListener('keydown', e => {
-    if (e.repeat) return;
-    if (e.key === 'ArrowLeft' || e.key.toLowerCase()==='a') keys.left = true;
-    if (e.key === 'ArrowRight' || e.key.toLowerCase()==='d') keys.right = true;
-    if (e.code === 'Space') { keys.fire = true; e.preventDefault(); }
-    if (e.key.toLowerCase() === 'p') togglePause();
-    if (e.key.toLowerCase() === 'r') restart();
-  });
-  addEventListener('keyup', e => {
-    if (e.key === 'ArrowLeft' || e.key.toLowerCase()==='a') keys.left = false;
-    if (e.key === 'ArrowRight' || e.key.toLowerCase()==='d') keys.right = false;
-    if (e.code === 'Space') keys.fire = false;
-  });
-
-  function bindTouch(btn, prop){
-    let id = null;
-    const on = (ev)=>{ ev.preventDefault(); id = (ev.changedTouches?ev.changedTouches[0].identifier:null); touch[prop] = true; };
-    const off = (ev)=>{ ev.preventDefault(); touch[prop] = false; id = null; };
-    btn.addEventListener('pointerdown', on);
-    btn.addEventListener('pointerup', off);
-    btn.addEventListener('pointerleave', off);
-    btn.addEventListener('pointercancel', off);
-  }
-  bindTouch(leftBtn, 'left');
-  bindTouch(rightBtn, 'right');
-  bindTouch(fireBtn, 'fire');
-
-  // ----- Game mechanics -----
-  let last = 0;
-  function loop(ts) {
-    const t = ts/1000;
-    const dt = Math.min(0.033, (ts - last) / 1000 || 0);
-    last = ts;
-    if (state === STATE.RUN) update(dt);
-    render(t);
-    requestAnimationFrame(loop);
-  }
-
+  // Main update & loop
+  let last = performance.now();
   function update(dt) {
-    // Move player
     const p = world.player;
-    const move = (keys.left||touch.left? -1 : 0) + (keys.right||touch.right? 1 : 0);
+    const move = (keys.left || touch.left ? -1 : 0) + (keys.right || touch.right ? 1 : 0);
     p.x += move * p.speed * dt;
     const margin = 18;
     p.x = Math.max(margin, Math.min(world.w - margin, p.x));
 
     // Shooting
     p.cd -= dt;
-    if ((keys.fire||touch.fire) && p.cd <= 0) {
-      world.bullets.push({ x: p.x-2, y: p.y-14, w: 4, h: 10, vy: -520 });
+    if ((keys.fire || touch.fire) && p.cd <= 0) {
+      world.bullets.push({ x: p.x - 2, y: p.y - 14, w: 4, h: 10, vy: -520 });
       p.cd = 0.22;
       audio.beep(880, 0.05, 'square', 0.035);
     }
@@ -360,51 +354,53 @@
     for (const b of world.bullets) b.y += b.vy * dt;
     world.bullets = world.bullets.filter(b => b.y + b.h > 0);
 
-    // Invader movement
-    const invAlive = world.invaders.filter(i=>i.alive);
+    // Invader update
+    const invAlive = world.invaders.filter(i => i.alive);
     if (invAlive.length === 0) {
-      // Next level
+      // next level
       world.level++;
       syncHUD();
       spawnInvaders(world.level);
+      spawnShields();
       audio.beep(650, 0.12, 'square', 0.05);
       audio.beep(900, 0.12, 'square', 0.05);
       return;
     }
-    const speedBoost = Math.min(160, (60 - invAlive.length) * 2.4);
+
+    // speed scaling
+    const speedBoost = Math.min(180, (50 - invAlive.length) * 2.2);
     const v = world.invaderSpeed + speedBoost;
 
     let minX = Infinity, maxX = -Infinity;
     for (const inv of invAlive) {
       inv.x += world.dir * v * dt * 0.6;
-      minX = Math.min(minX, inv.x - inv.w/2);
-      maxX = Math.max(maxX, inv.x + inv.w/2);
+      minX = Math.min(minX, inv.x - inv.w / 2);
+      maxX = Math.max(maxX, inv.x + inv.w / 2);
     }
-    if (minX < 12 || maxX > world.w - 12) world.edgeReached = true;
-    if (world.edgeReached) {
-      world.edgeReached = false;
+    if (minX < 12 || maxX > world.w - 12) {
       world.dir *= -1;
-      for (const inv of invAlive) inv.y += 20; // step down
+      for (const inv of invAlive) inv.y += 20;
     }
 
-    // Alien shooting
+    // Enemy shooting
     world.nextShotTimer -= dt;
     if (world.nextShotTimer <= 0) {
       const shooters = bottomRow(invAlive);
       if (shooters.length) {
-        const s = shooters[(Math.random()*shooters.length)|0];
-        world.enemyBullets.push({ x: s.x-2, y: s.y+10, w: 4, h: 10, vy: 200 + Math.random()*120 });
+        const s = shooters[(Math.random() * shooters.length) | 0];
+        world.enemyBullets.push({ x: s.x - 2, y: s.y + 10, w: 4, h: 10, vy: 200 + Math.random() * 120 });
         audio.beep(180, 0.06, 'square', 0.03);
       }
-      world.nextShotTimer = 0.5 + Math.random()*0.9;
+      world.nextShotTimer = 0.5 + Math.random() * 0.9;
     }
+
     for (const eb of world.enemyBullets) eb.y += eb.vy * dt;
     world.enemyBullets = world.enemyBullets.filter(b => b.y < world.h + 20);
 
     // Collisions: player bullets vs invaders
     for (const b of world.bullets) {
       for (const inv of invAlive) {
-        if (inv.alive && rectHit({x:b.x,y:b.y,w:b.w,h:b.h},{x:inv.x-inv.w/2,y:inv.y-inv.h/2,w:inv.w,h:inv.h})) {
+        if (inv.alive && rectHit({ x: b.x, y: b.y, w: b.w, h: b.h }, { x: inv.x - inv.w / 2, y: inv.y - inv.h / 2, w: inv.w, h: inv.h })) {
           inv.alive = false;
           b.y = -9999;
           world.score += inv.value;
@@ -419,78 +415,45 @@
     // Bullets vs shields
     for (const s of world.shields) {
       if (s.hp <= 0) continue;
-      for (const b of world.bullets) {
-        if (rectHit({x:b.x,y:b.y,w:b.w,h:b.h}, s)) { s.hp--; b.y = -9999; audio.beep(300, 0.03, 'square', 0.02); }
-      }
-      for (const eb of world.enemyBullets) {
-        if (rectHit({x:eb.x,y:eb.y,w:eb.w,h:eb.h}, s)) { s.hp--; eb.y = world.h+999; audio.beep(260, 0.03, 'square', 0.02); }
-      }
+      for (const b of world.bullets) if (rectHit({ x: b.x, y: b.y, w: b.w, h: b.h }, s)) { s.hp--; b.y = -9999; audio.beep(300, 0.03); }
+      for (const eb of world.enemyBullets) if (rectHit({ x: eb.x, y: eb.y, w: eb.w, h: eb.h }, s)) { s.hp--; eb.y = world.h + 999; audio.beep(260, 0.03); }
     }
 
     // Enemy bullets vs player
     for (const eb of world.enemyBullets) {
-      if (rectHit({x:eb.x,y:eb.y,w:eb.w,h:eb.h},{x:p.x-18,y:p.y-9,w:36,h:18})) {
+      if (rectHit({ x: eb.x, y: eb.y, w: eb.w, h: eb.h }, { x: p.x - 18, y: p.y - 9, w: 36, h: 18 })) {
         eb.y = world.h + 999;
         hitPlayer();
         break;
       }
     }
 
-    // Invaders reach bottom or hit shields/player
+    // Invaders reach player
     for (const inv of invAlive) {
-      const invRect = {x:inv.x-inv.w/2,y:inv.y-inv.h/2,w:inv.w,h:inv.h};
-      if (invRect.y + invRect.h >= p.y - 4) { // reached player row
+      const invRect = { x: inv.x - inv.w / 2, y: inv.y - inv.h / 2, w: inv.w, h: inv.h };
+      if (invRect.y + invRect.h >= p.y - 4) {
         world.player.lives = 0;
         gameOver();
         return;
       }
-      // Invaders eat shields
+      // Invaders collide with shields
       for (const s of world.shields) {
-        if (s.hp>0 && rectHit(invRect, s)) s.hp = 0;
+        if (s.hp > 0 && rectHit(invRect, s)) s.hp = 0;
       }
     }
   }
 
-  function hitPlayer() {
-    world.player.lives--;
-    syncHUD();
-    audio.beep(120, 0.12, 'square', 0.06);
-    if (world.player.lives <= 0) {
-      gameOver();
-    } else {
-      // brief invulnerability blink – handled visually in render
-    }
-  }
-
-  function gameOver() {
-    state = STATE.GAMEOVER;
-    showOverlay(`<h1 class="title">Game Over</h1>
-      <p class="subtitle">Punkte: <b>${world.score|0}</b> · Level: <b>${world.level|0}</b></p>
-      <div class="row"><div class="btn" onclick="location.reload()">🔁 Neu starten</div></div>
-      <div class="controls"><p>Tipp: Schieße durch kleine Lücken in den Schilden, um sicher zu bleiben.</p></div>`);
-  }
-
-  function bottomRow(invaders) {
-    const byCol = new Map();
-    for (const inv of invaders) {
-      const col = Math.round((inv.x / 48)|0);
-      const prev = byCol.get(col);
-      if (!prev || inv.y > prev.y) byCol.set(col, inv);
-    }
-    return Array.from(byCol.values());
-  }
-
-  // ----- Render -----
+  // Render
   let blinkT = 0;
   function render(t) {
     fixDPI();
     starsBackground(t);
 
     // Shields
-    for (const s of world.shields) if (s.hp>0) drawShield(s);
+    for (const s of world.shields) if (s.hp > 0) drawShield(s);
 
     // Invaders
-    for (const inv of world.invaders) if (inv.alive) drawInvader(inv.x, inv.y, 1);
+    for (const inv of world.invaders) if (inv.alive) drawInvader(inv.x, inv.y);
 
     // Bullets
     ctx.fillStyle = "#ffec6e";
@@ -498,69 +461,53 @@
     ctx.fillStyle = "#ff6e9a";
     for (const b of world.enemyBullets) ctx.fillRect(b.x, b.y, b.w, b.h);
 
-    // Player (blink when just hit)
+    // Player blink effect when running
     blinkT += 0.016;
-    const blink = (state!==STATE.RUN) ? false : (world.player.lives>=0 && (Math.sin(blinkT*20)>0.6));
-    if (!blink) drawPlayer(world.player);
+    const blink = state === STATE.RUN && Math.sin(blinkT * 20) > 0.6 && world.player.lives < 3;
+    if (state !== STATE.GAMEOVER) drawPlayer(world.player, blink);
 
-    // State overlays (small)
-    if (state === STATE.PAUSE) {
-      banner("PAUSE – Drücke P zum Fortsetzen");
-    } else if (state === STATE.WIN) {
-      banner("SIEG!");
-    }
-  }
-  function banner(text) {
-    ctx.save();
-    ctx.globalAlpha = .9;
-    ctx.fillStyle = "rgba(0,0,0,.5)";
-    const w = ctx.measureText ? Math.max(280, ctx.measureText(text).width + 40) : 360;
-    ctx.fillRect((canvas.clientWidth-w)/2, canvas.clientHeight/2-26, w, 48);
-    ctx.globalAlpha = 1;
-    ctx.fillStyle = "#e6f1ff";
-    ctx.font = "700 20px system-ui, sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText(text, canvas.clientWidth/2, canvas.clientHeight/2+8);
-    ctx.restore();
+    // Banners
+    if (state === STATE.PAUSE) banner("PAUSE — Drücke P zum Fortsetzen");
+    else if (state === STATE.GAMEOVER) banner(`GAME OVER · Punkte: ${world.score | 0} · Drücke "Neustart" oder R`);
   }
 
-  // ----- Overlay & control helpers -----
-  function showOverlay(html) {
-    overlay.innerHTML = `<div>${html}</div>`;
-    overlay.classList.remove('hidden');
+  // Game loop
+  function loop(ts) {
+    const now = ts || performance.now();
+    const dt = Math.min(0.033, (now - last) / 1000 || 0);
+    last = now;
+    if (state === STATE.RUN) update(dt);
+    render(now / 1000);
+    requestAnimationFrame(loop);
   }
-  function hideOverlay() { overlay.classList.add('hidden'); }
-
-  function start(withSound=true) {
-    audio.enabled = withSound;
-    if (withSound && !audio.ctx) try { audio.ctx = new AudioCtx(); } catch {}
-    reset(1);
-    state = STATE.RUN;
-    hideOverlay();
-  }
-  function togglePause() {
-    if (state === STATE.RUN) { state = STATE.PAUSE; }
-    else if (state === STATE.PAUSE) { state = STATE.RUN; }
-  }
-  function restart() { location.reload(); }
-
-  // Buttons
-  startBtn.addEventListener('click', ()=> start(true));
-  muteBtn.addEventListener('click', ()=> start(false));
-  pauseBtn.addEventListener('click', ()=> togglePause());
-  restartBtn.addEventListener('click', ()=> restart());
-  toggleAudioBtn.addEventListener('click', ()=> {
-    audio.enabled = !audio.enabled;
-    if (audio.enabled && !audio.ctx) audio.ctx = new AudioCtx();
-    toggleAudioBtn.firstChild.nodeValue = audio.enabled ? "🔊" : "🔇";
-    toggleAudioBtn.querySelector('b').textContent = audio.enabled ? "Sound" : "Stumm";
-  });
-
-  // Start loop
   requestAnimationFrame(loop);
 
-  // Expose for overlay restart button
-  window.locationReload = restart;
+  // UI buttons
+  startBtn.addEventListener('click', () => {
+    audio.enabled = true;
+    if (!audio.ctx) try { audio.ctx = new AudioCtx(); } catch (e) {}
+    reset(1, false);
+    state = STATE.RUN;
+  });
+  muteBtn.addEventListener('click', () => {
+    audio.enabled = false;
+    reset(1, false);
+    state = STATE.RUN;
+  });
+  restartBtn.addEventListener('click', () => {
+    restart();
+  });
+
+  // Init in MENU state (no auto-start)
+  reset(1, false);
+  state = STATE.MENU;
+  syncHUD();
+
+  // Optional: make the menu buttons visible stateful (small UX nicety)
+  function updateMenuButtons() {
+    // Nothing fancy — user can always press buttons.
+  }
+  setInterval(updateMenuButtons, 1000);
 })();
 </script>
 </body>
